@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 企业内部培训管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Roboto, Arial, sans-serif;
+            /* ========== 背景图片设置（新增） ========== */
+            background-image: url('images/login/bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* 备用背景色（图片加载失败时显示） */
+            background-color: #4ba293;
+            /* ====================================== */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-card {
+            /* 改为半透明白色，让背景图片透出来 */
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            animation: fadeInUp 0.6s ease;
+            /* 可选：毛玻璃效果 */
+            backdrop-filter: blur(2px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .avatar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .avatar-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #bbb;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error-msg {
+            background: rgba(255, 235, 238, 0.95);
+            color: #f44336;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .demo-hint {
+            background: rgba(245, 245, 245, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 25px;
+        }
+
+        .demo-hint p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .demo-hint .demo-users {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .demo-hint .demo-users span {
+            background: #e8eaf6;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: #667eea;
+            cursor: pointer;
+        }
+
+        .demo-hint .demo-users span:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1>🎓 培训管理系统</h1>
+                <p>企业内部培训管理平台</p>
+            </div>
+            <div class="avatar">
+                <div class="avatar-icon">👤</div>
+            </div>
+            
+            <div id="errorMsg" class="error-msg"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>员工ID</label>
+                    <input type="number" id="empId" placeholder="请输入员工ID，如：1001" required>
+                </div>
+                <div class="form-group">
+                    <label>员工密码</label>
+                    <input type="password" id="empPassword" placeholder="请输入员工密码，如：张三" required>
+                </div>
+                <button type="submit" class="btn-login">🔐 登录系统</button>
+            </form>
+            
+            <div class="demo-hint">
+                <p>📋 测试账号（点击快速填充）：</p>
+                <div class="demo-users">
+                    <span onclick="fillDemo(1001, '123456'  )">张三 (1001)</span>
+                    <span onclick="fillDemo(1002, '123456'  )">李四 (1002)</span>
+                    <span onclick="fillDemo(1003, '123456'  )">王五 (1003)</span>
+                    <span onclick="fillDemo(1004, '123456'  )">赵六 (1004)</span>
+                    <span onclick="fillDemo(1005, '123456'  )">张伟 (1005)</span>
+                    <span onclick="fillDemo(1006, '123456'  )">王芳 (1006)</span>
+                    <span onclick="fillDemo(1019, '123456'  )">彭浩 (1019)</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>© 2026 企业内部培训管理系统 | 请输入员工ID和密码登录</p>
+        </div>
+    </div>
+
+    <script>
+        function fillDemo(empId, empPassword) {
+            document.getElementById('empId').value = empId;
+            document.getElementById('empPassword').value = empPassword;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const empId = document.getElementById('empId').value;
+            const empPassword = document.getElementById('empPassword').value;
+            
+            if (!empId || !empPassword) {
+                showError('请填写员工ID和密码');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ empId: parseInt(empId), empPassword: empPassword })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    sessionStorage.setItem('user', JSON.stringify({
+                        empId: result.empId,
+                        empName: result.empName,
+                        deptName: result.deptName,
+                        position: result.position
+                    }));
+                    window.location.href = '/main';
+                } else {
+                    showError(result.error || '登录失败，请检查员工ID和密码');
+                }
+            } catch (error) {
+                showError('登录失败：' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
