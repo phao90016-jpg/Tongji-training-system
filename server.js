@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/main', (req, res) => {
-    res.render('index');      // 访问 /main → 显示 index.ejs
+    res.render('main');      // 访问 /main → 显示 main.ejs
 });
 
 app.get('/about', (req, res) => {
