@@ -288,6 +288,73 @@
         .table-container {
             overflow-x: auto;
         }
+
+        /* 数据统计概览卡片 */
+        .stats-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stats-overview-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 20px;
+            padding: 22px 18px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stats-overview-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-overview-card .overview-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .stats-overview-card .overview-value {
+            font-size: 26px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .stats-overview-card .overview-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* 部门覆盖率进度条 */
+        .coverage-bar {
+            background: #e9ecef;
+            border-radius: 8px;
+            height: 10px;
+            overflow: hidden;
+            min-width: 80px;
+        }
+
+        .coverage-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .coverage-fill.high {
+            background: linear-gradient(90deg, #4caf50, #66bb6a);
+        }
+
+        .coverage-fill.medium {
+            background: linear-gradient(90deg, #ff9800, #ffb74d);
+        }
+
+        .coverage-fill.low {
+            background: linear-gradient(90deg, #f44336, #ef5350);
+        }
     </style>
 </head>
 <body>
@@ -298,31 +365,20 @@
                 <h1>🎓 企业内部培训管理系统</h1>
                 <p>Enterprise Training Management System</p>
             </div>
-            <div class="user-info">
+            <div class="user-info" style="cursor:pointer;" onclick="window.location.href='/profile'" title="点击进入个人中心">
                 <div class="user-avatar">👤</div>
                 <div class="user-details">
                     <span class="user-name" id="userName">加载中...</span>
                     <span class="user-dept" id="userDept"></span>
                 </div>
-                <button class="logout-btn" onclick="logout()">🚪 退出登录</button>
+                <button class="logout-btn" onclick="event.stopPropagation(); logout();">🚪 退出登录</button>
             </div>
             <div class="nav-menu">
                 <button class="nav-btn active" onclick="showTab('courses')">📚 课程中心</button>
                 <button class="nav-btn" onclick="showTab('myTraining')">📋 我的培训</button>
                 <button class="nav-btn" onclick="showTab('trainers')">⭐ 讲师风采</button>
                 <button class="nav-btn" onclick="showTab('stats')">📊 数据统计</button>
-            </div>
-        </div>
-
-        <!-- 统计卡片区域 -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>📊 部门培训KPI</h3>
-                <div id="kpiData" class="stat-content">加载中...</div>
-            </div>
-            <div class="stat-card">
-                <h3>💰 预算使用情况</h3>
-                <div id="budgetData" class="stat-content">加载中...</div>
+                <button class="nav-btn" onclick="window.location.href='/kpi'" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">📈 KPI看板</button>
             </div>
         </div>
 
@@ -347,47 +403,6 @@
                         </thead>
                         <tbody></tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- 冲突检测（自动使用当前登录用户） -->
-            <div class="section">
-                <div class="section-title">
-                    <span>⚠️</span> 报名冲突检测
-                </div>
-                <div class="form-card">
-                    <div class="form-row">
-                        <div class="form-group" style="flex:2">
-                            <label>选择课程</label>
-                            <select id="checkCourseId" class="form-control"></select>
-                        </div>
-                        <button class="btn btn-primary" onclick="checkConflict()">🔍 检测冲突</button>
-                    </div>
-                    <div id="conflictResult" class="result-box" style="display: none;"></div>
-                </div>
-            </div>
-
-            <!-- 培训签到 -->
-            <div class="section">
-                <div class="section-title">
-                    <span>✅</span> 培训签到
-                </div>
-                <div class="form-card">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>报名记录ID</label>
-                            <input type="text" id="signinRegId" placeholder="请输入报名ID">
-                        </div>
-                        <div class="form-group">
-                            <label>签到方式</label>
-                            <select id="signinType" class="form-control">
-                                <option value="扫码签到">📱 扫码签到</option>
-                                <option value="手动签到">✍️ 手动签到</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-success" onclick="doSignin()">✅ 确认签到</button>
-                    </div>
-                    <div id="signinResult" class="result-box" style="display: none;"></div>
                 </div>
             </div>
 
@@ -433,6 +448,7 @@
                                 <th>签到时间</th>
                                 <th>课程时间</th>
                                 <th>地点</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -466,9 +482,44 @@
 
         <!-- 数据统计 Tab -->
         <div id="statsTab" class="tab-content" style="display: none;">
+            <!-- 概览统计卡片 -->
+            <div class="stats-overview-grid">
+                <div class="stats-overview-card">
+                    <div class="overview-icon">📚</div>
+                    <div class="overview-value" id="statTotalCourses">--</div>
+                    <div class="overview-label">发布课程数</div>
+                </div>
+                <div class="stats-overview-card">
+                    <div class="overview-icon">📝</div>
+                    <div class="overview-value" id="statTotalRegs">--</div>
+                    <div class="overview-label">总报名人次</div>
+                </div>
+                <div class="stats-overview-card">
+                    <div class="overview-icon">✅</div>
+                    <div class="overview-value" id="statSigninRate">--%</div>
+                    <div class="overview-label">签到率</div>
+                </div>
+                <div class="stats-overview-card">
+                    <div class="overview-icon">⭐</div>
+                    <div class="overview-value" id="statAvgRating">--</div>
+                    <div class="overview-label">讲师平均星级</div>
+                </div>
+                <div class="stats-overview-card">
+                    <div class="overview-icon">👥</div>
+                    <div class="overview-value" id="statTotalEmps">--</div>
+                    <div class="overview-label">在职员工</div>
+                </div>
+                <div class="stats-overview-card">
+                    <div class="overview-icon">🎓</div>
+                    <div class="overview-value" id="statTotalTrainers">--</div>
+                    <div class="overview-label">讲师数量</div>
+                </div>
+            </div>
+
+            <!-- 课程报名统计 -->
             <div class="section">
                 <div class="section-title">
-                    <span>📊</span> 课程报名统计
+                    <span>📚</span> 课程报名统计
                 </div>
                 <div class="table-container">
                     <table class="data-table" id="courseStatsTable">
@@ -478,7 +529,51 @@
                                 <th>最大人数</th>
                                 <th>已报名</th>
                                 <th>剩余名额</th>
+                                <th>满员率</th>
                                 <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 讲师绩效 -->
+            <div class="section">
+                <div class="section-title">
+                    <span>⭐</span> 讲师绩效统计
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="trainerPerfTable">
+                        <thead>
+                            <tr>
+                                <th>讲师姓名</th>
+                                <th>职称</th>
+                                <th>当前星级</th>
+                                <th>评分次数</th>
+                                <th>平均评分</th>
+                                <th>绩效评价</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 部门培训概况 -->
+            <div class="section">
+                <div class="section-title">
+                    <span>🏢</span> 部门培训概况
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="deptStatsTable">
+                        <thead>
+                            <tr>
+                                <th>部门名称</th>
+                                <th>员工人数</th>
+                                <th>已培训人数</th>
+                                <th>培训覆盖率</th>
+                                <th>覆盖率进度</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -535,6 +630,11 @@
             // 刷新对应Tab的数据
             if (tabName === 'myTraining') {
                 loadMyRegistrations();
+            } else if (tabName === 'stats') {
+                loadDashboardStats();
+                loadCourseStats();
+                loadTrainerPerformance();
+                loadDeptStats();
             }
         }
         
@@ -557,7 +657,6 @@
                 const response = await fetch('/api/courses');
                 const data = await response.json();
                 const tbody = document.querySelector('#coursesTable tbody');
-                const checkSelect = document.querySelector('#checkCourseId');
                 const rateSelect = document.querySelector('#rateCourseId');
                 
                 if (data.success && data.data.length > 0) {
@@ -576,7 +675,6 @@
                     const options = data.data.map(course => 
                         `<option value="${course.COURSE_ID}">${course.COURSE_NAME}</option>`
                     ).join('');
-                    checkSelect.innerHTML = options;
                     rateSelect.innerHTML = options;
                 } else {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">暂无课程数据</td></tr>';
@@ -610,50 +708,25 @@
             }
         }
         
-        // 冲突检测（自动使用当前登录用户）
-        async function checkConflict() {
-            const user = getCurrentUser();
-            if (!user) return;
-            const courseId = document.getElementById('checkCourseId').value;
-            
-            try {
-                const response = await fetch('/api/check-conflict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ empId: user.empId, courseId: parseInt(courseId) })
-                });
-                const result = await response.json();
-                showResult('conflictResult', result.message, result.hasConflict ? 'error' : 'success');
-            } catch (error) {
-                showResult('conflictResult', '检测失败：' + error.message, 'error');
-            }
-        }
-        
-        // 签到
-        async function doSignin() {
-            const regId = document.getElementById('signinRegId').value;
-            const signinType = document.getElementById('signinType').value;
-            
-            if (!regId) {
-                showResult('signinResult', '请填写报名记录ID', 'error');
-                return;
-            }
-            
+        // 从"我的培训"列表签到
+        async function signinFromList(regId, courseName) {
+            if (!confirm(`确认签到课程：${courseName}？`)) return;
+
             try {
                 const response = await fetch('/api/signin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ regId: parseInt(regId), signinType: signinType })
+                    body: JSON.stringify({ regId: regId, signinType: '手动签到' })
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showResult('signinResult', result.message, 'success');
-                    document.getElementById('signinRegId').value = '';
+                    alert('✅ ' + result.message);
+                    loadMyRegistrations();
                 } else {
-                    showResult('signinResult', result.error, 'error');
+                    alert('❌ ' + result.error);
                 }
             } catch (error) {
-                showResult('signinResult', '签到失败：' + error.message, 'error');
+                alert('签到失败：' + error.message);
             }
         }
         
@@ -708,62 +781,6 @@
         
         // ============= 统计数据 =============
         
-        // 加载KPI数据
-        async function loadKPI() {
-            try {
-                const response = await fetch('/api/kpi');
-                const data = await response.json();
-                if (data.success && data.data.length > 0) {
-                    document.getElementById('kpiData').innerHTML = data.data.map(dept => `
-                        <div class="stat-item">
-                            <span class="label">${dept.DEPT_NAME}</span>
-                            <span class="value">${dept.COMPLETION_RATE || 0}% (${dept.COMPLETED_EMP || 0}/${dept.TOTAL_EMP || 0})</span>
-                        </div>
-                        <div class="kpi-bar">
-                            <div class="kpi-fill" style="width: ${dept.COMPLETION_RATE || 0}%"></div>
-                        </div>
-                    `).join('');
-                } else {
-                    document.getElementById('kpiData').innerHTML = '<div class="stat-item">暂无数据</div>';
-                }
-            } catch (error) {
-                document.getElementById('kpiData').innerHTML = '<div class="stat-item">加载失败</div>';
-            }
-        }
-        
-        // 加载预算数据
-        async function loadBudget() {
-            try {
-                const response = await fetch('/api/budget');
-                const data = await response.json();
-                if (data.success && data.data.length > 0) {
-                    document.getElementById('budgetData').innerHTML = data.data.map(budget => {
-                        let usageClass = '';
-                        if (budget.USAGE_RATE > 80) usageClass = 'usage-high';
-                        else if (budget.USAGE_RATE > 50) usageClass = 'usage-medium';
-                        else usageClass = 'usage-low';
-                        return `
-                            <div class="stat-item">
-                                <span class="label">${budget.DEPT_NAME}</span>
-                                <span class="value">¥${budget.USED_BUDGET} / ¥${budget.ANNUAL_BUDGET}</span>
-                            </div>
-                            <div class="kpi-bar">
-                                <div class="kpi-fill" style="width: ${budget.USAGE_RATE}%"></div>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">剩余预算</span>
-                                <span class="value ${usageClass}">¥${budget.REMAIN_BUDGET}</span>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    document.getElementById('budgetData').innerHTML = '<div class="stat-item">暂无数据</div>';
-                }
-            } catch (error) {
-                document.getElementById('budgetData').innerHTML = '<div class="stat-item">加载失败</div>';
-            }
-        }
-        
         // 加载我的报名记录（自动使用当前登录用户）
         async function loadMyRegistrations() {
             const user = getCurrentUser();
@@ -782,10 +799,14 @@
                             <td>${reg.SIGNIN_TIME ? new Date(reg.SIGNIN_TIME).toLocaleString() : '-'}</td>
                             <td>${new Date(reg.START_TIME).toLocaleDateString()}</td>
                             <td>${reg.LOCATION || '-'}</td>
+                            <td>${reg.STATUS === '已报名'
+                                ? `<button class="btn btn-success btn-sm" onclick="signinFromList(${reg.REG_ID}, '${reg.COURSE_NAME.replace(/'/g, "\\'")}')">✅ 签到</button>`
+                                : '<span style="color:#999;font-size:12px;">--</span>'
+                            }</td>
                         `,
                     ).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">暂无报名记录</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">暂无报名记录</td></tr>';
                 }
             } catch (error) {
                 console.error('加载报名记录失败:', error);
@@ -824,6 +845,9 @@
                 const tbody = document.querySelector('#courseStatsTable tbody');
                 if (data.success && data.data.length > 0) {
                     tbody.innerHTML = data.data.map(stat => {
+                        const fillRate = stat.MAX_STUDENTS > 0
+                            ? Math.round(stat.REGISTERED_COUNT / stat.MAX_STUDENTS * 100)
+                            : 0;
                         let statusClass = '';
                         let statusText = '';
                         if (stat.REMAINING_SLOTS === 0) {
@@ -836,30 +860,128 @@
                             statusClass = 'status-published';
                             statusText = '可报名';
                         }
-                    return `
-                                <tr>
-                                    <td><strong>${stat.COURSE_NAME}</strong></td>
-                                    <td>${stat.MAX_STUDENTS}</td>
-                                    <td>${stat.REGISTERED_COUNT}</td>
-                                    <td>${stat.REMAINING_SLOTS}</td>
-                                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                                </tr>
-                            `;
-                        }).join('');
+                        return `
+                            <tr>
+                                <td><strong>${stat.COURSE_NAME}</strong></td>
+                                <td>${stat.MAX_STUDENTS}</td>
+                                <td>${stat.REGISTERED_COUNT}</td>
+                                <td>${stat.REMAINING_SLOTS}</td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <div class="coverage-bar" style="flex:1;">
+                                            <div class="coverage-fill${fillRate >= 90 ? ' high' : fillRate >= 50 ? ' medium' : ' low'}" style="width:${fillRate}%"></div>
+                                        </div>
+                                        <span style="font-size:12px;color:#888;white-space:nowrap;">${fillRate}%</span>
+                                    </div>
+                                </td>
+                                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">暂无数据</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">暂无数据</td></tr>';
                 }
             } catch (error) {
                 console.error('加载课程统计失败:', error);
             }
         }
         
+        // 加载仪表盘概览统计
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard-stats');
+                const data = await response.json();
+                if (data.success && data.data) {
+                    const d = data.data;
+                    document.getElementById('statTotalCourses').textContent = d.TOTAL_COURSES || 0;
+                    document.getElementById('statTotalRegs').textContent = d.TOTAL_REGISTRATIONS || 0;
+                    const signinRate = d.TOTAL_REGISTRATIONS > 0
+                        ? Math.round(d.TOTAL_SIGNINS / d.TOTAL_REGISTRATIONS * 100)
+                        : 0;
+                    document.getElementById('statSigninRate').textContent = signinRate + '%';
+                    document.getElementById('statAvgRating').textContent = d.AVG_TRAINER_RATING || '--';
+                    document.getElementById('statTotalEmps').textContent = d.TOTAL_EMPLOYEES || 0;
+                    document.getElementById('statTotalTrainers').textContent = d.TOTAL_TRAINERS || 0;
+                }
+            } catch (error) {
+                console.error('加载仪表盘统计失败:', error);
+            }
+        }
+
+        // 加载讲师绩效统计
+        async function loadTrainerPerformance() {
+            try {
+                const response = await fetch('/api/trainer-performance');
+                const data = await response.json();
+                const tbody = document.querySelector('#trainerPerfTable tbody');
+                if (data.success && data.data.length > 0) {
+                    tbody.innerHTML = data.data.map(t => {
+                        let perfClass = '';
+                        let perfText = '';
+                        const avg = t.AVG_SCORE || 0;
+                        if (avg >= 4.5) { perfClass = 'status-published'; perfText = '优秀'; }
+                        else if (avg >= 3.5) { perfClass = 'status-booked'; perfText = '良好'; }
+                        else if (avg > 0) { perfClass = 'status-warning'; perfText = '一般'; }
+                        else { perfClass = 'status-closed'; perfText = '暂无评分'; }
+                        return `
+                            <tr>
+                                <td><strong>${t.TRAINER_NAME}</strong></td>
+                                <td>${t.TITLE || '-'}</td>
+                                <td><span class="stars">${'⭐'.repeat(t.STAR_LEVEL || 3)}</span> (${t.STAR_LEVEL || 3}星)</td>
+                                <td>${t.RATING_COUNT || 0}次</td>
+                                <td><strong>${avg > 0 ? avg : '--'}</strong></td>
+                                <td><span class="status-badge ${perfClass}">${perfText}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">暂无数据</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载讲师绩效失败:', error);
+            }
+        }
+
+        // 加载部门培训统计
+        async function loadDeptStats() {
+            try {
+                const response = await fetch('/api/dept-training-stats');
+                const data = await response.json();
+                const tbody = document.querySelector('#deptStatsTable tbody');
+                if (data.success && data.data.length > 0) {
+                    tbody.innerHTML = data.data.map(d => {
+                        const rate = d.TRAINING_RATE || 0;
+                        let fillClass = 'low';
+                        if (rate >= 80) fillClass = 'high';
+                        else if (rate >= 40) fillClass = 'medium';
+                        return `
+                            <tr>
+                                <td><strong>${d.DEPT_NAME}</strong></td>
+                                <td>${d.TOTAL_EMP}人</td>
+                                <td>${d.TRAINED_EMP}人</td>
+                                <td><strong>${rate}%</strong></td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <div class="coverage-bar" style="flex:1;">
+                                            <div class="coverage-fill ${fillClass}" style="width:${rate}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">暂无数据</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载部门统计失败:', error);
+            }
+        }
+
         // ============= 页面初始化 =============
         window.addEventListener('DOMContentLoaded', () => {
             displayUserInfo();
             loadCourses();
-            loadKPI();
-            loadBudget();
             loadTrainers();
             loadCourseStats();
         });

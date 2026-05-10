@@ -67,6 +67,10 @@ app.get('/profile', (req, res) => {
     res.render('profile');    // 访问 /profile → 显示 profile.ejs
 });
 
+app.get('/kpi', (req, res) => {
+    res.render('kpi');        // 访问 /kpi → 显示 kpi.ejs (KPI数据看板)
+});
+
 // ============= 登录验证API =============
 app.post('/api/login', async (req, res) => {
     let conn;
@@ -82,8 +86,8 @@ app.post('/api/login', async (req, res) => {
         conn = await pool.getConnection();
         
         const result = await conn.execute(
-            `SELECT EMP_ID, EMP_NAME, DEPT_NAME, POSITION, STATUS 
-             FROM EMPLOYEES 
+            `SELECT EMP_ID, EMP_NAME, DEPT_NAME, POSITION, EMAIL, PHONE, STATUS
+             FROM EMPLOYEES
              WHERE EMP_ID = :empId AND EMP_PASSWORD = :empPassword AND STATUS = '在职'`,
             [empId, empPassword]
         );
@@ -105,7 +109,9 @@ app.post('/api/login', async (req, res) => {
             empId: employee.EMP_ID,
             empName: employee.EMP_NAME,
             deptName: employee.DEPT_NAME,
-            position: employee.POSITION
+            position: employee.POSITION,
+            email: employee.EMAIL,
+            phone: employee.PHONE
         });
     } catch (err) {
         console.error('登录失败:', err.message);
@@ -117,11 +123,75 @@ app.post('/api/login', async (req, res) => {
 
 // ============= 健康检查 =============
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
-        message: '培训管理系统运行正常' 
+        message: '培训管理系统运行正常'
     });
+});
+
+// ============= 获取员工详细信息 =============
+app.get('/api/profile/:empId', async (req, res) => {
+    let conn;
+    const { empId } = req.params;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.execute(
+            `SELECT EMP_ID, EMP_NAME, DEPT_NAME, POSITION, EMAIL, PHONE, HIRE_DATE, STATUS
+             FROM EMPLOYEES
+             WHERE EMP_ID = :empId`,
+            [empId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: '员工不存在' });
+        }
+        res.json({ success: true, data: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        if (conn) await conn.close();
+    }
+});
+
+// ============= 修改密码 =============
+app.post('/api/change-password', async (req, res) => {
+    let conn;
+    const { empId, oldPassword, newPassword } = req.body;
+
+    if (!empId || !oldPassword || !newPassword) {
+        return res.status(400).json({ success: false, error: '请填写完整信息' });
+    }
+
+    if (newPassword.length < 4) {
+        return res.status(400).json({ success: false, error: '新密码长度不能少于4位' });
+    }
+
+    try {
+        conn = await pool.getConnection();
+
+        const result = await conn.execute(
+            `SELECT EMP_ID FROM EMPLOYEES
+             WHERE EMP_ID = :empId AND EMP_PASSWORD = :oldPassword`,
+            [empId, oldPassword]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({ success: false, error: '原密码不正确' });
+        }
+
+        await conn.execute(
+            `UPDATE EMPLOYEES SET EMP_PASSWORD = :newPassword WHERE EMP_ID = :empId`,
+            { newPassword, empId },
+            { autoCommit: true }
+        );
+
+        res.json({ success: true, message: '密码修改成功' });
+    } catch (err) {
+        console.error('修改密码失败:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        if (conn) await conn.close();
+    }
 });
 
 // ============= 1. 获取所有课程 =============
@@ -688,6 +758,75 @@ app.get('/api/trainer-ratings/:trainerId', async (req, res) => {
     }
 });
 
+// ============= 16. 获取仪表盘统计数据 =============
+app.get('/api/dashboard-stats', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.execute(`
+            SELECT
+                (SELECT COUNT(*) FROM TRAINING_COURSES WHERE COURSE_STATUS = '发布') AS TOTAL_COURSES,
+                (SELECT COUNT(*) FROM TRAINING_REGISTRATIONS) AS TOTAL_REGISTRATIONS,
+                (SELECT COUNT(*) FROM TRAINING_REGISTRATIONS WHERE STATUS = '已签到') AS TOTAL_SIGNINS,
+                (SELECT COUNT(*) FROM EMPLOYEES WHERE STATUS = '在职') AS TOTAL_EMPLOYEES,
+                (SELECT COUNT(*) FROM TRAINERS) AS TOTAL_TRAINERS,
+                (SELECT ROUND(AVG(STAR_LEVEL), 1) FROM TRAINERS) AS AVG_TRAINER_RATING
+            FROM DUAL
+        `);
+        res.json({ success: true, data: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        if (conn) await conn.close();
+    }
+});
+
+// ============= 17. 获取讲师绩效统计 =============
+app.get('/api/trainer-performance', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.execute(`
+            SELECT T.TRAINER_NAME, T.STAR_LEVEL, T.TITLE,
+                   COUNT(R.RATING_ID) AS RATING_COUNT,
+                   NVL(ROUND(AVG(R.SCORE), 1), 0) AS AVG_SCORE
+            FROM TRAINERS T
+            LEFT JOIN TRAINER_RATINGS R ON T.TRAINER_ID = R.TRAINER_ID
+            GROUP BY T.TRAINER_ID, T.TRAINER_NAME, T.STAR_LEVEL, T.TITLE
+            ORDER BY AVG_SCORE DESC NULLS LAST
+        `);
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        if (conn) await conn.close();
+    }
+});
+
+// ============= 18. 获取部门培训统计 =============
+app.get('/api/dept-training-stats', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.execute(`
+            SELECT E.DEPT_NAME,
+                   COUNT(DISTINCT E.EMP_ID) AS TOTAL_EMP,
+                   COUNT(DISTINCT R.EMP_ID) AS TRAINED_EMP,
+                   ROUND(COUNT(DISTINCT R.EMP_ID) / NULLIF(COUNT(DISTINCT E.EMP_ID), 0) * 100, 1) AS TRAINING_RATE
+            FROM EMPLOYEES E
+            LEFT JOIN TRAINING_REGISTRATIONS R ON E.EMP_ID = R.EMP_ID AND R.STATUS = '已签到'
+            WHERE E.STATUS = '在职'
+            GROUP BY E.DEPT_NAME
+            ORDER BY TRAINING_RATE DESC NULLS LAST
+        `);
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        if (conn) await conn.close();
+    }
+});
+
 // ============= 启动服务器 =============
 const PORT = process.env.PORT || 3000;
 
@@ -701,6 +840,7 @@ async function startServer() {
 ╠══════════════════════════════════════════════════════════════╣
 ║  服务地址: http://localhost:${PORT}                           ║
 ║  前端页面: http://localhost:${PORT}                           ║
+║  KPI看板:  http://localhost:${PORT}/kpi                      ║
 ║  健康检查: http://localhost:${PORT}/api/health               ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  📋 可用API接口:                                             ║

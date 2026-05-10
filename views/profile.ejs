@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 企业内部培训管理系统</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            background-image: url('/images/main/bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #667eea;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 头像区域 */
+        .profile-avatar-section {
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 48px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-position {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .info-list {
+            text-align: left;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-icon {
+            width: 36px;
+            height: 36px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .info-text {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* 修改密码表单 */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .result-msg {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .result-msg.success {
+            background: #e8f5e9;
+            color: #4caf50;
+            border-left: 4px solid #4caf50;
+            display: block;
+        }
+
+        .result-msg.error {
+            background: #ffebee;
+            color: #f44336;
+            border-left: 4px solid #f44336;
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <h1>👤 个人中心</h1>
+                <p>Account Settings</p>
+            </div>
+            <button class="back-btn" onclick="window.location.href='/main'">🏠 返回首页</button>
+        </div>
+
+        <div class="content-grid">
+            <!-- 个人信息卡片 -->
+            <div class="card profile-avatar-section">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-name" id="profileName">加载中...</div>
+                <div class="profile-position" id="profileDept"></div>
+
+                <div class="info-list">
+                    <div class="info-item">
+                        <div class="info-icon">🆔</div>
+                        <div class="info-text">
+                            <div class="info-label">员工ID</div>
+                            <div class="info-value" id="infoEmpId">--</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">💼</div>
+                        <div class="info-text">
+                            <div class="info-label">职位</div>
+                            <div class="info-value" id="infoPosition">--</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">📧</div>
+                        <div class="info-text">
+                            <div class="info-label">邮箱</div>
+                            <div class="info-value" id="infoEmail">--</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">📱</div>
+                        <div class="info-text">
+                            <div class="info-label">电话</div>
+                            <div class="info-value" id="infoPhone">--</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">🏢</div>
+                        <div class="info-text">
+                            <div class="info-label">部门</div>
+                            <div class="info-value" id="infoDept">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 修改密码卡片 -->
+            <div class="card">
+                <h3>🔒 修改密码</h3>
+                <form id="passwordForm" onsubmit="return false;">
+                    <div class="form-group">
+                        <label>原密码</label>
+                        <input type="password" id="oldPassword" placeholder="请输入原密码" autocomplete="current-password">
+                    </div>
+                    <div class="form-group">
+                        <label>新密码</label>
+                        <input type="password" id="newPassword" placeholder="请输入新密码（至少4位）" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label>确认新密码</label>
+                        <input type="password" id="confirmPassword" placeholder="请再次输入新密码" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn-submit" onclick="changePassword()">✅ 确认修改</button>
+                </form>
+                <div id="pwdResult" class="result-msg"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 企业内部培训管理系统 | 个人中心</p>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentUser() {
+            const userStr = sessionStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = '/';
+                return null;
+            }
+            return JSON.parse(userStr);
+        }
+
+        function displayProfile() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            document.getElementById('profileName').textContent = user.empName;
+            document.getElementById('profileDept').textContent = user.position || '员工';
+            document.getElementById('infoEmpId').textContent = user.empId;
+            document.getElementById('infoPosition').textContent = user.position || '--';
+            document.getElementById('infoEmail').textContent = user.email || '--';
+            document.getElementById('infoPhone').textContent = user.phone || '--';
+            document.getElementById('infoDept').textContent = user.deptName || '--';
+        }
+
+        async function changePassword() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const resultEl = document.getElementById('pwdResult');
+
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                showPwdResult('请填写所有密码字段', 'error');
+                return;
+            }
+
+            if (newPassword.length < 4) {
+                showPwdResult('新密码长度不能少于4位', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showPwdResult('两次输入的新密码不一致', 'error');
+                return;
+            }
+
+            if (oldPassword === newPassword) {
+                showPwdResult('新密码不能与原密码相同', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        empId: user.empId,
+                        oldPassword: oldPassword,
+                        newPassword: newPassword
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showPwdResult('✅ ' + result.message, 'success');
+                    document.getElementById('oldPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    showPwdResult('❌ ' + result.error, 'error');
+                }
+            } catch (error) {
+                showPwdResult('修改失败：' + error.message, 'error');
+            }
+        }
+
+        function showPwdResult(message, type) {
+            const el = document.getElementById('pwdResult');
+            el.textContent = message;
+            el.className = 'result-msg ' + type;
+            setTimeout(() => { el.className = 'result-msg'; }, 5000);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            displayProfile();
+        });
+    </script>
+</body>
+</html>
